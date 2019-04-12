@@ -29,9 +29,9 @@ gender <- unzip("youtube-personality.zip", "youtube-personality/YouTube-Personal
 audiovisual <- unzip("youtube-personality.zip", "youtube-personality/YouTube-Personality-audiovisual_features.csv") %>% read_delim(delim = " ")
 train <- unzip("youtube-personality.zip", "youtube-personality/YouTube-Personality-Personality_impression_scores_train.csv") %>% read_delim(delim = " ")
 
-train_set <- audiovisual %>% 
-  inner_join(gender) %>% 
-  inner_join(train)
+train_set <- train %>% 
+  inner_join(audiovisual) %>% 
+  inner_join(gender)
 
 test_set <- audiovisual %>% 
   anti_join(train) %>% 
