@@ -54,24 +54,34 @@ essays_features_afinn <-
   anti_join(get_stopwords(), by = c(token = 'word')) %>%
   inner_join(get_sentiments('afinn'), by = c(token = 'word'))
 
-joined <- inner_join(essays_features_nrc, essays_features_afinn)
+joined <- left_join(essays_features_nrc, essays_features_afinn)
 
 score_data <- joined %>% 
   group_by(Id, sentiment) %>% 
-  summarise(sum(score)) %>% 
-  spread(sentiment, `sum(score)`, fill = 0)
+  summarise(sums = sum(score, na.rm = TRUE)) %>% 
+  spread(sentiment, sums, fill = 0)
+
+ ##################
+train_joined <- train_set %>% inner_join(proportions, by = c('vlogId' = 'Id')) %>% inner_join(score_data, by = c('vlogId' = 'Id'))
+
+test_joined <-  test_set %>% inner_join(proportions, by = c('vlogId' = 'Id')) %>% inner_join(score_data, by = c('vlogId' = 'Id'))
 
 
-scaled_score_data <- score_data %>% ungroup() %>% mutate_at(2:11, scale)
+####################
 
-train_joined <- train_set %>% inner_join(proportions, by = c('vlogId' = 'Id')) %>% inner_join(scaled_score_data, by = c('vlogId' = 'Id'))
+variables = train_joined %>% dplyr::select(-c(1:6, gender))
 
-test_joined <-  test_set %>% inner_join(proportions, by = c('vlogId' = 'Id')) %>% inner_join(scaled_score_data, by = c('vlogId' = 'Id'))
+correlations <- cor(variables)
 
+corrplot(correlations, method = 'circle')
 
-test_set %>% anti_join(test_joined, by = 'vlogId')
+eigenvalues <- eigen(correlations)
 
-anti_join(testset,score_data_test)
+data_ext <- train_joined %>% dplyr::select(-c(vlogId, Agr:Open, gender))
+
+control <- trainControl(method = 'repeatedcv', number = 10, repeats = 3, search = 'random')
+
+model <- train(Extr ~(.), data = data_ext,method = 'lm',preProcess = c('center', 'scale'), trControl = control, tuneLength = 10 )
 
 
 
