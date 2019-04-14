@@ -1,8 +1,6 @@
-library(MASS)
 library(tidyverse)
 library(tokenizers)
 library(tidytext)
-library(caret)
 
 
 # extract nrc features of all transcripts ---------------------------------
@@ -41,6 +39,13 @@ features_scored <-
   spread(sentiment, sums, fill = 0)
 
 
+
+# additional predictors ---------------------------------------------------
+
+
+
+
+
 # join new computed variables with train and test set ---------------------
 train_joined <- train_set %>% 
   inner_join(proportions_nrc, by = c('vlogId' = 'Id')) %>% 
@@ -52,14 +57,22 @@ test_joined <- test_set %>%
 
 
 # analysis ----------------------------------------------------------------
+library(MASS)
+library(caret)
+library(corrplot)
 
-variables = train_joined %>% dplyr::select(-c(1:6, gender))
+# correlations
+variables = train_joined %>% dplyr::select(-c(vlogId:Open, gender))
 
 correlations <- cor(variables)
 
 corrplot(correlations, method = 'circle')
 
-eigenvalues <- eigen(correlations)
+# eigenvalues
+eigenvalues <- eigen(correlations)$values
+plot(eigenvalues)
+
+# modeling
 
 data_ext <- train_joined %>% dplyr::select(-c(vlogId, Agr:Open, gender))
 
